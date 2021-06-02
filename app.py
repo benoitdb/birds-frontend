@@ -1,29 +1,71 @@
-from os import truncate
+#IMPORTS
+import os
 import streamlit as st
 import pandas as pd
 import numpy as np
 import operator
 from PIL import Image
-
-# import json
-# from io import BytesIO
-# import os
-
-# import bucket
-# from bucket import everything
+import soundfile as sf
+from IPython.display import Audio
+import requests
+from streamlit_lottie import st_lottie
 
 
-# from project_model import project_Model
+# 1 - HEADER
 
+# Application title & subtitle
 '''
 # B I R D S
 '''
 
-# @st.cache()
-# def load_model(path='models/trained_model_resnet50.pt', device='cpu'):
-#     """Retrieves the trained model and maps it to the CPU by default, can also specify GPU here."""
-#     model = Resnet_Model(path_to_pretrained_model=path, map_location=device)
-#     return model
+# Quick instructions for the user
+st.header('Welcome to our birds identification project!')
+instructions = """
+    Either upload your own record or select from the sidebar to get a prerecorded file.
+     
+    The file you select or upload will be sent through the Deep Neural Network in real-time 
+    and the output will be displayed to the screen.
+    """
+st.write(instructions)
+
+# File uploader
+file = st.file_uploader('Upload a record')
+if file is not None:
+    bytesdata = file.read()
+    with open("pip.ogg", "wb") as file:
+        file.write(bytesdata)
+
+# api call
+
+button = st.button('Identify this Bird !','Submit','Clic to identify this record')
+if button:
+    url = "https://birdsapi-kkxhmnngqq-ew.a.run.app/uploadfile"
+    print("lkjlkj")
+    print(bytesdata)
+    files = {"file": bytesdata}
+    response = requests.post(url, files=files)
+    if response.status_code == 200:
+        resp = response.json()
+        resp
+    else:
+        "😬 api error 🤖"
+        response
+        
+#st.audio(file, format='audio/ogg')
+        
+# Animation from Lottie    
+def load_lottieurl(url: str):
+    r = requests.get(url)
+    if r.status_code != 200:
+        return None
+    return r.json()
+
+lottie_url = "https://assets4.lottiefiles.com/private_files/lf30_4r6a1nau.json"
+#lottie_url = "https://assets2.lottiefiles.com/private_files/lf30_lmsysoyy.json"
+lottie_json = load_lottieurl(lottie_url)
+st_lottie(lottie_json)
+
+
 
 # @st.cache()
 # def load_index_to_label_dict(path='src/index_to_class_label.json'):
@@ -84,34 +126,19 @@ from PIL import Image
 #     # types_of_birds = sorted(list(all_image_files['test'].keys()))
 #     # types_of_birds = [bird.title() for bird in types_of_birds]
 
-st.header('Welcome To Project Birds Detection!')
-instructions = """
-    Either upload your own record or select from the sidebar to get a prerecorded file. 
-    The file you select or upload will be sent through the Deep Neural Network in real-time 
-    and the output will be displayed to the screen.
-    """
-st.write(instructions)
-
-#file = st.file_uploader('Upload a record')
 #     # dtype_file_structure_mapping = {
-#     #     'All Images': 'consolidated', 'Images Used To Train The Model': 'train', 
+#     #     'All Images': 'consolidated', 'Images Used To Train The Model': 'train',
 #     #     'Images Used To Tune The Model': 'valid', 'Images The Model Has Never Seen': 'test'
 #     #     }
 #     # types_of_images = list(dtype_file_structure_mapping.keys())
 
-#     if file:
-#         ogg = Audio.open(file)
-#         prediction = predict(ogg, index_to_class_label_dict, model, 5)
-#         top_prediction = prediction[0][0]
-#         available_images = all_image_files.get('train').get(top_prediction.upper())
-#         examples_of_species = np.random.choice(available_images, size=3)
-#         files_to_get_from_s3 = []
-#         for im_name in examples_of_species:
-#             path = os.path.join('train', top_prediction.upper(), im_name)
-#             files_to_get_from_s3.append(path)
-#         images_from_s3 = load_files_from_s3(keys=files_to_get_from_s3)
 
-#     else:
+
+
+
+
+logo = st.sidebar.image('/home/benoit/code/benoitdb/birds-frontend/images/logo_100px.png')
+st.sidebar.subheader("B I R D S")
 dataset_type = st.sidebar.selectbox("Prerecorded files",'1')
 #image_files_subset = dtype_file_structure_mapping[dataset_type]
 
@@ -132,30 +159,37 @@ selected_species = st.sidebar.selectbox("Bird Type", '2')
 #         img = images_from_s3.pop(0)
 #         prediction = predict(img, index_to_class_label_dict, model, 5)
 
-#spectro = open('/home/benoit/code/benoitdb/birds-frontend/images/spectro.png')
 prediction = {'Acrocephalus palustris': 3.1710833e-08, 'Sylvia atricapilla': 2.5642566e-07, 'Hirundo rustica': 0.99999976}
-best_prediction = max(prediction.items(), key=operator.itemgetter(1))[0]
-best_prediction_rate = max(prediction.items(), key=operator.itemgetter(1))[1]
+top_prediction = max(prediction.items(), key=operator.itemgetter(1))[0]
+top_prediction_rate = max(prediction.items(), key=operator.itemgetter(1))[1]
+
+
+st.subheader("Here is the most likely bird : ")
+st.image('/home/benoit/code/benoitdb/birds-frontend/images/Hirundo_rustica.jpg')
+st.title(top_prediction)
+st.subheader("With a probability of : " + str(round(top_prediction_rate, 2)))
+link = 'https://en.wikipedia.org/wiki/' + top_prediction.lower().replace(' ', '%20')
+st.write(f'<a href="{link}" target="_blank">{top_prediction}</a>')
+
+
+st.subheader("Here are the three most likely bird species")
+df = pd.DataFrame(data=np.zeros((3, 2)), 
+                    columns=['Species', 'Confidence Level'])
+
+
+df = pd.DataFrame(columns=['Species', 'Confidence Level'])
+for name, prob in prediction.items():
+    link = 'https://fr.wikipedia.org/wiki/' + name.lower().replace(' ', '_')
+    df.loc[name, 'Species'] = f'<a href="{link}" target="_blank">{name.title()}</a>'
+    df.loc[name, 'Confidence Level'] = prob
+    
+df.reset_index()
+df.sort_values(by='Confidence Level', ascending=False)
+
+st.write(df.to_html(escape=False), unsafe_allow_html=True)
+
+#st.subheader('How does it works:')
 
 st.subheader("Here is the spectrogram of your recording")
 #resized_spectro = spectro#.resize((336,336))
 st.image('/home/benoit/code/benoitdb/birds-frontend/images/spectro.png')
-
-st.subheader("Here is the most likely bird : ")
-st.title(best_prediction)
-st.header("With a probability of : " + str(round(best_prediction_rate, 2)))
-
-
-st.subheader("Here are the three most likely bird species")
-# df = pd.DataFrame(data=np.zeros((3, 2)), 
-#                     columns=['Species', 'Confidence Level'],
-#                     index=np.linspace(1, 3, 3, dtype=int))
-
-# for key, val in enumerate(prediction):
-#     link = 'https://en.wikipedia.org/wiki/' + key[0].lower().replace(' ', '_')
-#     df.iloc[key, 0] = f'<a href="{link}" target="_blank">{key[0].title()}</a>'
-#     df.iloc[key, 1] = val[1]
-    
-#st.write(df.to_html(escape=False), unsafe_allow_html=True)
-
-# st.title('How it works:')
