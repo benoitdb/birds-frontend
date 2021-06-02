@@ -4,7 +4,6 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 import operator
-from PIL import Image
 import soundfile as sf
 from IPython.display import Audio
 import requests
