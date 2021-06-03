@@ -1,7 +1,6 @@
 streamlit
 pandas
 numpy
-operator
 requests
 streamlit_lottie
 
