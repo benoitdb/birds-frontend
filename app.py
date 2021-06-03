@@ -1,4 +1,6 @@
+
 #IMPORTS
+
 import streamlit as st
 import pandas as pd
 import numpy as np
@@ -6,9 +8,7 @@ import operator
 import requests
 from streamlit_lottie import st_lottie
 
-
 # 1 - HEADER
-
 # Application title & subtitle
 '''
 # B I R D S
@@ -158,7 +158,7 @@ st_lottie(lottie_json)
 #     response_wiki
 
 
-logo = st.sidebar.image('/home/benoit/code/benoitdb/birds-frontend/images/logo_100px.png')
+logo = st.sidebar.image('./images/logo_100px.png')
 
 birds = st.sidebar.subheader("B I R D S")
 
